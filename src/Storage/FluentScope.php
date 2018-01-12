@@ -12,7 +12,6 @@
 namespace LucaDegasperi\OAuth2Server\Storage;
 
 use Illuminate\Database\ConnectionResolverInterface as Resolver;
-use Illuminate\Support\Facades\DB;
 use League\OAuth2\Server\Entity\ScopeEntity;
 use League\OAuth2\Server\Storage\ScopeInterface;
 
@@ -109,7 +108,7 @@ class FluentScope extends AbstractFluentAdapter implements ScopeInterface
      */
     public function get($scope, $grantType = null, $clientId = null)
     {
-        $query = DB::connection(env('MYSQL_SLAVE', 'slave_mysql'))->table('oauth_scopes')
+        $query = $this->getConnection(env('MYSQL_SLAVE', 'slave_mysql'))->table('oauth_scopes')
                     ->select('oauth_scopes.id as id', 'oauth_scopes.description as description')
                     ->where('oauth_scopes.id', $scope);
 

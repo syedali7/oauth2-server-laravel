@@ -14,7 +14,6 @@ namespace LucaDegasperi\OAuth2Server\Storage;
 use Carbon\Carbon;
 use League\OAuth2\Server\Entity\RefreshTokenEntity;
 use League\OAuth2\Server\Storage\RefreshTokenInterface;
-use Illuminate\Support\Facades\DB;
 
 /**
  * This is the fluent refresh token class.
@@ -32,7 +31,7 @@ class FluentRefreshToken extends AbstractFluentAdapter implements RefreshTokenIn
      */
     public function get($token)
     {
-        $result = DB::connection(env('MYSQL_SLAVE', 'slave_mysql'))->table('oauth_refresh_tokens')
+        $result = $this->getConnection(env('MYSQL_SLAVE', 'slave_mysql'))->table('oauth_refresh_tokens')
                 ->where('oauth_refresh_tokens.id', $token)
                 ->where('oauth_refresh_tokens.expire_time', '>=', time())
                 ->first();

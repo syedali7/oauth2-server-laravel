@@ -83,8 +83,11 @@ abstract class AbstractFluentAdapter extends AbstractStorage
      *
      * @return \Illuminate\Database\ConnectionInterface
      */
-    protected function getConnection()
+    protected function getConnection($connectionName = null)
     {
-        return $this->resolver->connection($this->connectionName);
+        if(empty($connectionName)){
+            $connectionName = $this->connectionName;
+        }
+        return $this->resolver->connection($connectionName);
     }
 }

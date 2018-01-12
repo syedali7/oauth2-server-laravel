@@ -15,7 +15,6 @@ use Carbon\Carbon;
 use League\OAuth2\Server\Entity\AuthCodeEntity;
 use League\OAuth2\Server\Entity\ScopeEntity;
 use League\OAuth2\Server\Storage\AuthCodeInterface;
-use Illuminate\Support\Facades\DB;
 
 /**
  * This is the fluent auth code class.
@@ -33,7 +32,7 @@ class FluentAuthCode extends AbstractFluentAdapter implements AuthCodeInterface
      */
     public function get($code)
     {
-        $result = DB::connection(env('MYSQL_SLAVE', 'slave_mysql'))->table('oauth_auth_codes')
+        $result = $this->getConnection(env('MYSQL_SLAVE', 'slave_mysql'))->table('oauth_auth_codes')
             ->where('oauth_auth_codes.id', $code)
             ->where('oauth_auth_codes.expire_time', '>=', time())
             ->first();
@@ -57,7 +56,7 @@ class FluentAuthCode extends AbstractFluentAdapter implements AuthCodeInterface
      */
     public function getScopes(AuthCodeEntity $token)
     {
-        $result = DB::connection(env('MYSQL_SLAVE', 'slave_mysql'))->table('oauth_auth_code_scopes')
+        $result = $this->getConnection(env('MYSQL_SLAVE', 'slave_mysql'))->table('oauth_auth_code_scopes')
             ->select('oauth_scopes.*')
             ->join('oauth_scopes', 'oauth_auth_code_scopes.scope_id', '=', 'oauth_scopes.id')
             ->where('oauth_auth_code_scopes.auth_code_id', $token->getId())
