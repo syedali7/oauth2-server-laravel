@@ -19,7 +19,6 @@ use League\OAuth2\Server\Storage\ClientInterface;
 use League\OAuth2\Server\Storage\RefreshTokenInterface;
 use League\OAuth2\Server\Storage\ScopeInterface;
 use League\OAuth2\Server\Storage\SessionInterface;
-use Illuminate\Support\Facades\DB;
 
 /**
  * This is the fluent storage service provider class.
