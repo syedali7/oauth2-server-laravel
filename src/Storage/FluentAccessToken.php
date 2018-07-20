@@ -40,7 +40,7 @@ class FluentAccessToken extends AbstractFluentAdapter implements AccessTokenInte
                 ->first();
         }else {
             $result = Redis::get('access_token_by_id_'.$token);
-            $reult = unserialize($result);
+            $result = unserialize($result);
             if(empty($result)){
                 $result =  $this->getConnection(env('MYSQL_SLAVE', 'slave_mysql'))->table('oauth_access_tokens')
                     ->where('oauth_access_tokens.id', $token)
