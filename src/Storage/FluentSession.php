@@ -47,7 +47,7 @@ class FluentSession extends AbstractFluentAdapter implements SessionInterface
                 $result = $this->getConnection()->table('oauth_sessions')
                     ->where('oauth_sessions.id', $sessionId)
                     ->first();
-                Redis::setex('access_session_by_id_'.$sessionId, 300, serialize($result));
+                Redis::setex('access_session_by_id_'.$sessionId, env('OAUTH_CACHE_TTL',300), serialize($result));
             }
         }
 
@@ -86,7 +86,7 @@ class FluentSession extends AbstractFluentAdapter implements SessionInterface
                     ->join('oauth_access_tokens', 'oauth_sessions.id', '=', 'oauth_access_tokens.session_id')
                     ->where('oauth_access_tokens.id', $accessToken->getId())
                     ->first();
-                Redis::setex('oauth_session_by_access_token_'.$accessToken->getId(), 300, serialize($result));
+                Redis::setex('oauth_session_by_access_token_'.$accessToken->getId(), env('OAUTH_CACHE_TTL',300), serialize($result));
             }
         }
 
@@ -125,7 +125,7 @@ class FluentSession extends AbstractFluentAdapter implements SessionInterface
                     ->join('oauth_scopes', 'oauth_session_scopes.scope_id', '=', 'oauth_scopes.id')
                     ->where('oauth_session_scopes.session_id', $session->getId())
                     ->get();
-                Redis::setex('oauth_scopes_by_session_id_'.$session->getId(), 300, serialize($result));
+                Redis::setex('oauth_scopes_by_session_id_'.$session->getId(), env('OAUTH_CACHE_TTL',300), serialize($result));
             }
         }
 

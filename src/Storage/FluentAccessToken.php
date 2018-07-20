@@ -45,7 +45,7 @@ class FluentAccessToken extends AbstractFluentAdapter implements AccessTokenInte
                 $result =  $this->getConnection(env('MYSQL_SLAVE', 'slave_mysql'))->table('oauth_access_tokens')
                     ->where('oauth_access_tokens.id', $token)
                     ->first();
-                Redis::setex('access_token_by_id_'.$token, 300, serialize($result));
+                Redis::setex('access_token_by_id_'.$token, env('OAUTH_CACHE_TTL',300), serialize($result));
             }
         }
 
@@ -103,7 +103,7 @@ class FluentAccessToken extends AbstractFluentAdapter implements AccessTokenInte
                     ->join('oauth_scopes', 'oauth_access_token_scopes.scope_id', '=', 'oauth_scopes.id')
                     ->where('oauth_access_token_scopes.access_token_id', $token->getId())
                     ->get();
-                Redis::setex('oauth_scopes_by_access_token_'.$token->getId(), 300, serialize($result));
+                Redis::setex('oauth_scopes_by_access_token_'.$token->getId(), env('OAUTH_CACHE_TTL',300), serialize($result));
             }
         }
 
