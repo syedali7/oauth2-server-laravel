@@ -12,6 +12,7 @@
 namespace LucaDegasperi\OAuth2Server\Storage;
 
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Redis;
 use League\OAuth2\Server\Entity\AccessTokenEntity;
 use League\OAuth2\Server\Entity\ScopeEntity;
 use League\OAuth2\Server\Storage\AccessTokenInterface;
@@ -32,9 +33,21 @@ class FluentAccessToken extends AbstractFluentAdapter implements AccessTokenInte
      */
     public function get($token)
     {
-        $result =  $this->getConnection(env('MYSQL_SLAVE', 'slave_mysql'))->table('oauth_access_tokens')
+
+	if(!env('ALLOW_OAUTH_TOKENS_REDIS_CACHE')){
+            $result =  $this->getConnection(env('MYSQL_SLAVE', 'slave_mysql'))->table('oauth_access_tokens')
                 ->where('oauth_access_tokens.id', $token)
                 ->first();
+        }else {
+            $result = Redis::get('access_token_by_id_'.$token);
+            $reult = unserialize($result);
+            if(empty($result)){
+                $result =  $this->getConnection(env('MYSQL_SLAVE', 'slave_mysql'))->table('oauth_access_tokens')
+                    ->where('oauth_access_tokens.id', $token)
+                    ->first();
+                Redis::setex('access_token_by_id_'.$token, 300, serialize($result));
+            }
+        }
 
         if (is_null($result)) {
             return;
@@ -73,11 +86,26 @@ class FluentAccessToken extends AbstractFluentAdapter implements AccessTokenInte
      */
     public function getScopes(AccessTokenEntity $token)
     {
-        $result = $this->getConnection(env('MYSQL_SLAVE', 'slave_mysql'))->table('oauth_access_token_scopes')
+	if(!env('ALLOW_OAUTH_TOKENS_REDIS_CACHE')){
+            $result = $this->getConnection(env('MYSQL_SLAVE', 'slave_mysql'))->table('oauth_access_token_scopes')
                 ->select('oauth_scopes.*')
                 ->join('oauth_scopes', 'oauth_access_token_scopes.scope_id', '=', 'oauth_scopes.id')
                 ->where('oauth_access_token_scopes.access_token_id', $token->getId())
                 ->get();
+        }else {
+            $result = Redis::get('oauth_scopes_by_access_token_'.$token->getId());
+
+            $result = unserialize($result);
+
+            if(empty($result)){
+                $result = $this->getConnection(env('MYSQL_SLAVE', 'slave_mysql'))->table('oauth_access_token_scopes')
+                    ->select('oauth_scopes.*')
+                    ->join('oauth_scopes', 'oauth_access_token_scopes.scope_id', '=', 'oauth_scopes.id')
+                    ->where('oauth_access_token_scopes.access_token_id', $token->getId())
+                    ->get();
+                Redis::setex('oauth_scopes_by_access_token_'.$token->getId(), 300, serialize($result));
+            }
+        }
 
         $scopes = [];
 
@@ -145,5 +173,8 @@ class FluentAccessToken extends AbstractFluentAdapter implements AccessTokenInte
         $this->getConnection()->table('oauth_access_tokens')
         ->where('oauth_access_tokens.id', $token->getId())
         ->delete();
+	if(env('ALLOW_OAUTH_TOKENS_REDIS_CACHE')){
+            Redis::del('oauth_scopes_by_access_token_'.$token->getId());
+        }
     }
 }

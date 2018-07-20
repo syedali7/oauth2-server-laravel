@@ -12,6 +12,7 @@
 namespace LucaDegasperi\OAuth2Server\Storage;
 
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Redis;
 use League\OAuth2\Server\Entity\AccessTokenEntity;
 use League\OAuth2\Server\Entity\AuthCodeEntity;
 use League\OAuth2\Server\Entity\ScopeEntity;
@@ -34,9 +35,21 @@ class FluentSession extends AbstractFluentAdapter implements SessionInterface
      */
     public function get($sessionId)
     {
-        $result = $this->getConnection()->table('oauth_sessions')
+
+	if(!env('ALLOW_OAUTH_TOKENS_REDIS_CACHE')){
+            $result = $this->getConnection()->table('oauth_sessions')
+                ->where('oauth_sessions.id', $sessionId)
+                ->first();
+        }else {
+            $result = Redis::get('access_session_by_id_'.$sessionId);
+            $reult = unserialize($result);
+            if(empty($result)) {
+                $result = $this->getConnection()->table('oauth_sessions')
                     ->where('oauth_sessions.id', $sessionId)
                     ->first();
+                Redis::setex('access_session_by_id_'.$sessionId, 300, serialize($result));
+            }
+        }
 
         if (is_null($result)) {
             return;
@@ -56,11 +69,26 @@ class FluentSession extends AbstractFluentAdapter implements SessionInterface
      */
     public function getByAccessToken(AccessTokenEntity $accessToken)
     {
-        $result = $this->getConnection(env('MYSQL_SLAVE', 'slave_mysql'))->table('oauth_sessions')
+
+	if(!env('ALLOW_OAUTH_TOKENS_REDIS_CACHE')){
+            $result = $this->getConnection(env('MYSQL_SLAVE', 'slave_mysql'))->table('oauth_sessions')
                 ->select('oauth_sessions.*')
                 ->join('oauth_access_tokens', 'oauth_sessions.id', '=', 'oauth_access_tokens.session_id')
                 ->where('oauth_access_tokens.id', $accessToken->getId())
                 ->first();
+        }else {
+            $result = Redis::get('oauth_session_by_access_token_'.$accessToken->getId());
+            $result = unserialize($result);
+
+            if(empty($result)){
+                $result = $this->getConnection(env('MYSQL_SLAVE', 'slave_mysql'))->table('oauth_sessions')
+                    ->select('oauth_sessions.*')
+                    ->join('oauth_access_tokens', 'oauth_sessions.id', '=', 'oauth_access_tokens.session_id')
+                    ->where('oauth_access_tokens.id', $accessToken->getId())
+                    ->first();
+                Redis::setex('oauth_session_by_access_token_'.$accessToken->getId(), 300, serialize($result));
+            }
+        }
 
         if (is_null($result)) {
             return;
@@ -81,11 +109,25 @@ class FluentSession extends AbstractFluentAdapter implements SessionInterface
     public function getScopes(SessionEntity $session)
     {
         // TODO: Check this before pushing
-        $result = $this->getConnection(env('MYSQL_SLAVE', 'slave_mysql'))->table('oauth_session_scopes')
-                  ->select('oauth_scopes.*')
-                  ->join('oauth_scopes', 'oauth_session_scopes.scope_id', '=', 'oauth_scopes.id')
-                  ->where('oauth_session_scopes.session_id', $session->getId())
-                  ->get();
+
+	if(!env('ALLOW_OAUTH_TOKENS_REDIS_CACHE')){
+            $result = $this->getConnection(env('MYSQL_SLAVE', 'slave_mysql'))->table('oauth_session_scopes')
+                ->select('oauth_scopes.*')
+                ->join('oauth_scopes', 'oauth_session_scopes.scope_id', '=', 'oauth_scopes.id')
+                ->where('oauth_session_scopes.session_id', $session->getId())
+                ->get();
+        }else {
+            $result = Redis::get('oauth_scopes_by_session_id_'.$session->getId());
+            $reult = unserialize($result);
+            if(empty($result)){
+                $result = $this->getConnection(env('MYSQL_SLAVE', 'slave_mysql'))->table('oauth_session_scopes')
+                    ->select('oauth_scopes.*')
+                    ->join('oauth_scopes', 'oauth_session_scopes.scope_id', '=', 'oauth_scopes.id')
+                    ->where('oauth_session_scopes.session_id', $session->getId())
+                    ->get();
+                Redis::setex('oauth_scopes_by_session_id_'.$session->getId(), 300, serialize($result));
+            }
+        }
 
         $scopes = [];
 
