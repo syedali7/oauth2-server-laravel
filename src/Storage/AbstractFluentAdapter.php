@@ -35,6 +35,8 @@ abstract class AbstractFluentAdapter extends AbstractStorage
      */
     protected $connectionName;
 
+    protected $redisConection;
+
     /**
      * Create a new abstract fluent adapter instance.
      *
@@ -44,6 +46,7 @@ abstract class AbstractFluentAdapter extends AbstractStorage
     {
         $this->resolver = $resolver;
         $this->connectionName = null;
+	$this->redisConection = \Redis::connection(env('OAUTH_REDIS_CONNECTION', 'default'));
     }
 
     /**

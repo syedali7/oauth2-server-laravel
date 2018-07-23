@@ -41,7 +41,7 @@ class FluentSession extends AbstractFluentAdapter implements SessionInterface
                 ->where('oauth_sessions.id', $sessionId)
                 ->first();
         }else {
-            $result = Redis::get('access_session_by_id_'.$sessionId);
+            $result = $this->redisConection->get('access_session_by_id_'.$sessionId);
             $result = unserialize($result);
             if(empty($result)) {
                 $result = $this->getConnection()->table('oauth_sessions')
@@ -77,7 +77,7 @@ class FluentSession extends AbstractFluentAdapter implements SessionInterface
                 ->where('oauth_access_tokens.id', $accessToken->getId())
                 ->first();
         }else {
-            $result = Redis::get('oauth_session_by_access_token_'.$accessToken->getId());
+            $result = $this->redisConection->get('oauth_session_by_access_token_'.$accessToken->getId());
             $result = unserialize($result);
 
             if(empty($result)){
@@ -117,7 +117,7 @@ class FluentSession extends AbstractFluentAdapter implements SessionInterface
                 ->where('oauth_session_scopes.session_id', $session->getId())
                 ->get();
         }else {
-            $result = Redis::get('oauth_scopes_by_session_id_'.$session->getId());
+            $result = $this->redisConection->get('oauth_scopes_by_session_id_'.$session->getId());
             $result = unserialize($result);
             if(empty($result)){
                 $result = $this->getConnection(env('MYSQL_SLAVE', 'slave_mysql'))->table('oauth_session_scopes')

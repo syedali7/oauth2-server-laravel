@@ -39,7 +39,7 @@ class FluentAccessToken extends AbstractFluentAdapter implements AccessTokenInte
                 ->where('oauth_access_tokens.id', $token)
                 ->first();
         }else {
-            $result = Redis::get('access_token_by_id_'.$token);
+            $result = $this->redisConection->get('access_token_by_id_'.$token);
             $result = unserialize($result);
             if(empty($result)){
                 $result =  $this->getConnection(env('MYSQL_SLAVE', 'slave_mysql'))->table('oauth_access_tokens')
@@ -93,7 +93,7 @@ class FluentAccessToken extends AbstractFluentAdapter implements AccessTokenInte
                 ->where('oauth_access_token_scopes.access_token_id', $token->getId())
                 ->get();
         }else {
-            $result = Redis::get('oauth_scopes_by_access_token_'.$token->getId());
+            $result = $this->redisConection->get('oauth_scopes_by_access_token_'.$token->getId());
 
             $result = unserialize($result);
 
@@ -175,6 +175,7 @@ class FluentAccessToken extends AbstractFluentAdapter implements AccessTokenInte
         ->delete();
 	if(env('ALLOW_OAUTH_TOKENS_REDIS_CACHE')){
             Redis::del('oauth_scopes_by_access_token_'.$token->getId());
+	    Redis::del('access_token_by_id_'.$token->getId());
         }
     }
 }
