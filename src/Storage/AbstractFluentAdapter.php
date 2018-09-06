@@ -13,6 +13,7 @@ namespace LucaDegasperi\OAuth2Server\Storage;
 
 use Illuminate\Database\ConnectionResolverInterface as Resolver;
 use League\OAuth2\Server\Storage\AbstractStorage;
+use Illuminate\Support\Facades\Redis;
 
 /**
  * This is the abstract fluent adapter class.
@@ -46,7 +47,7 @@ abstract class AbstractFluentAdapter extends AbstractStorage
     {
         $this->resolver = $resolver;
         $this->connectionName = null;
-	$this->redisConection = \Redis::connection(env('OAUTH_REDIS_CONNECTION', 'default'));
+	$this->redisConection = Redis::connection(env('OAUTH_REDIS_CONNECTION', 'default'));
     }
 
     /**
